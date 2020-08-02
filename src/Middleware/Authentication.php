@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Olivier\Mezzio;
+namespace Olivier\Mezzio\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

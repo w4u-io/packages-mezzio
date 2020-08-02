@@ -1,0 +1,21 @@
+{
+    "name": "olivierjonet/mezzio",
+    "description": "Bunch of stuff needed for mezzio application",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "olivierjonet",
+            "email": "olivier@w4u.be"
+        }
+    ],
+    "require": {
+        "php": "^7.1",
+        "lcobucci/jwt": "^3.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Olivier\\Mezzio\\": "src"
+        }
+    }
+}

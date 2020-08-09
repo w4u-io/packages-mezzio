@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Olivier\Mezzio\Middleware;
 
 use Olivier\Mezzio\Exception\Auth\InvalidJwtException;
+use Olivier\Mezzio\Exception\Auth\ExpiredJwtException;
 use Olivier\Mezzio\Exception\Auth\MissingJwtException;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Token;
+use Lcobucci\JWT\ValidationData;
 use Lcobucci\JWT\Signer\Hmac\Sha512;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -29,6 +31,7 @@ class Authentication implements MiddlewareInterface
      * @return ResponseInterface
      * @throws InvalidJwtException
      * @throws MissingJwtException
+     * @throws ExpiredJwtException
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -40,9 +43,20 @@ class Authentication implements MiddlewareInterface
 
         $token = $this->getTokenFromJwt($jwt);
 
+        if ($token->isExpired() === true) {
+            throw new ExpiredJwtException();
+        }
+
         if ($this->isTokenValid($token) === false) {
             throw new InvalidJwtException();
         }
+
+//        $validationData = new ValidationData();
+//        $validationData->setCurrentTime(time());
+//
+//        if ($token->validate($validationData) === false) {
+//            throw new InvalidJwtException();
+//        }
 
         return $handler->handle($request->withAttribute('auth', $token->getClaims()));
     }

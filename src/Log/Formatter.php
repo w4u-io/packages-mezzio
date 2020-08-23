@@ -12,6 +12,7 @@ class Formatter extends JsonFormatter
     public function format(array $record): string
     {
         $record['level'] = $record['level_name'];
+        $record['tags'] = $record['context']['tags'] ?? null;
 
         unset($record['level_name']);
 

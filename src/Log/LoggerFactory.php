@@ -3,10 +3,12 @@
 namespace Olivier\Mezzio\Log;
 
 use DateTimeZone;
+use Exception;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\RedisHandler;
 use Redis;
+use RedisException;
 use Psr\Container\ContainerInterface;
 
 class LoggerFactory
@@ -16,6 +18,7 @@ class LoggerFactory
         $channel = 'service-logging';
         $timezone = 'UTC';
 
+        $handlers = null;
         $handlersConfig = null;
 
         if ($container->has('config')) {
@@ -27,18 +30,19 @@ class LoggerFactory
                 $channel = $logConfig['channel'];
             }
             $timezone = $config['timezone'];
+
+            $handlers = $this->getHandlers($handlersConfig);
         }
 
-        if ($handlersConfig === null) {
+        if ($handlers === null) {
             $handlersConfig = [
                 'stream' => [
                     'resource' => 'php://stdout',
                     'level' => Logger::WARNING
                 ]
             ];
+            $handlers = $this->getHandlers($handlersConfig);
         }
-
-        $handlers = $this->getHandlers($handlersConfig);
 
         $timezone = new DateTimeZone($timezone);
 
@@ -53,13 +57,17 @@ class LoggerFactory
     {
         $handlers = [];
         foreach ($config as $handlerName => $handlerConfig) {
+            $handler = null;
             switch ($handlerName) {
                 case 'redis':
-                    $handlers[] = $this->getRedisHandler($handlerConfig);
+                    $handler = $this->getRedisHandler($handlerConfig);
                     break;
                 case 'stream':
-                    $handlers[] = $this->getStreamHandler($handlerConfig);
+                    $handler = $this->getStreamHandler($handlerConfig);
                     break;
+            }
+            if ($handler !== null) {
+                $handlers[] = $handler;
             }
         }
         return $handlers;
@@ -86,12 +94,17 @@ class LoggerFactory
         $redisKey = $config['key'] ?? 'services';
         $redisPort = $config['port'] ?? 6379;
 
-        $redisServer = new Redis();
-        $redisServer->connect($redisHost, $redisPort);
+        try {
+            $redisServer = new Redis();
+            $redisServer->connect($redisHost, $redisPort);
 
-        $redisHandler = new RedisHandler($redisServer, $redisKey);
-        $redisHandler->setFormatter(new Formatter());
+            $redisHandler = new RedisHandler($redisServer, $redisKey);
+            $redisHandler->setFormatter(new Formatter());
 
-        return $redisHandler;
+            return $redisHandler;
+        } catch (RedisException $exception) {
+            error_log('Could not connect to Redis server: ' . $redisHost . ' - Exception: ' . $exception->getMessage());
+            return null;
+        }
     }
 }

@@ -3,7 +3,6 @@
 namespace Olivier\Mezzio\Log;
 
 use DateTimeZone;
-use Exception;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\RedisHandler;
@@ -29,9 +28,14 @@ class LoggerFactory
                 $handlersConfig = $logConfig['handlers'] ?? null;
                 $channel = $logConfig['channel'];
             }
-            $timezone = $config['timezone'];
 
-            $handlers = $this->getHandlers($handlersConfig);
+            if (isset($config['timezone'])) {
+                $timezone = $config['timezone'];
+            }
+
+            if ($handlersConfig !== null) {
+                $handlers = $this->getHandlers($handlersConfig);
+            }
         }
 
         if ($handlers === null) {
